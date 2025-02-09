@@ -36,15 +36,46 @@ const TravelForm = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!city || !startDate || !days) {
       alert("Please fill out all fields before confirming your trip.");
       return;
     }
-    alert(`Trip planned to ${city} starting on ${startDate.toLocaleDateString("en-US")} for ${days} days!`);
-    navigate("/");
+  
+    // Prepare data to send
+    const tripData = {
+      location: city, // Send the city name
+      travelDate: startDate.toISOString(), // Convert start date to ISO string for backend
+      travelDays: days, // Send the number of days
+    };
+  
+    try {
+      // Send data to backend via POST request to /generateItinerary endpoint
+      const response = await fetch('http://localhost:3000/generateItinerary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json', // Tell the backend we're sending JSON
+        },
+        body: JSON.stringify(tripData), // Convert the JavaScript object to a JSON string
+      });
+  
+      // Check if the response is okay
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('Itinerary generated:', responseData.itinerary);
+        alert(`Your trip to ${city} has been planned!`);
+        navigate("/"); // Navigate back to home page
+      } else {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred while sending the data.");
+    }
   };
+  
 
   return (
     <div className="trip-container">
