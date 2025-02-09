@@ -15,7 +15,7 @@ const TravelForm = () => {
   const calculateEndDate = (start, days) => {
     if (start && days > 0) {
       const endDateObj = new Date(start);
-      endDateObj.setDate(endDateObj.getDate() + parseInt(days) - 1);
+      endDateObj.setDate(endDateObj.getDate() + parseInt(days));
       return endDateObj;
     }
     return null;
