@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css"; 
-import "./TravelForm.css"; 
+import "react-datepicker/dist/react-datepicker.css";
+import "./TravelForm.css";
 
 const TravelForm = () => {
   const [city, setCity] = useState("");
@@ -11,6 +11,7 @@ const TravelForm = () => {
   const [endDate, setEndDate] = useState(null);
   const navigate = useNavigate();
 
+  // Calculates the end date based on the start date and number of days
   const calculateEndDate = (start, days) => {
     if (start && days > 0) {
       const endDateObj = new Date(start);
@@ -20,18 +21,22 @@ const TravelForm = () => {
     return null;
   };
 
+  // Handle start date change
   const handleStartDateChange = (date) => {
     setStartDate(date);
     setEndDate(calculateEndDate(date, days));
   };
 
+  // Handle number of days change
   const handleNumDaysChange = (e) => {
     const newNumDays = parseInt(e.target.value) || 0;
-    if (newNumDays <= 0) return;
-    setDays(newNumDays);
-    setEndDate(calculateEndDate(startDate, newNumDays));
+    if (newNumDays > 0) {
+      setDays(newNumDays);
+      setEndDate(calculateEndDate(startDate, newNumDays));
+    }
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!city || !startDate || !days) {
@@ -47,26 +52,25 @@ const TravelForm = () => {
     };
 
     try {
-      const response = await fetch('http://localhost:3000/generateItinerary', {
-        method: 'POST',
+      const response = await fetch("http://localhost:3000/generateItinerary", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(tripData),
       });
 
       if (response.ok) {
         const responseData = await response.json();
-        console.log('Itinerary generated:', responseData.itinerary);
-        alert(`Your trip to ${city} has been planned!`);
-        navigate("/itinerary", { state: tripData });
+        const itinerary = responseData.itinerary; // Get itinerary data from the response
+        // Pass both tripData and itinerary to the next page
+        navigate("/itinerary", { state: { tripData, itinerary } });
       } else {
         const errorData = await response.json();
-        alert(`Error: ${errorData.error}`);
+        console.log(`Error: ${errorData.error}`);
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("An error occurred while sending the data.");
     }
   };
 

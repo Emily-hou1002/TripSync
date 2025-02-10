@@ -34,19 +34,21 @@ form {
 label {
   font-weight: bold;
   margin-top: 10px;
-  text-align: center; /* Align labels to the left */
+  text-align: center; 
   display: block;
 }
 
-/* Input and Datepicker Styling */
+/* Adjust width with max-width */
 input, .react-datepicker-wrapper {
   padding: 12px;
   font-size: 1rem;
   border-radius: 5px;
   text-align: center;
   margin-top: 2px;
-  width: 120%;
+  width: 100%; /* Keep width at 100% */
+  max-width: 100%; /* Ensure it doesn't exceed the parent container width */
 }
+
 
 /* Ensuring the input container inside the datepicker is aligned properly */
 .react-datepicker__input-container {

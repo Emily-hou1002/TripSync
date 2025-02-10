@@ -22,7 +22,6 @@ async function getCoordinates(city) {
         console.error('Error fetching coordinates:', error);
         return null;
     }
-
 }
 
 async function getRecommendationSpots(city) {
@@ -30,7 +29,7 @@ async function getRecommendationSpots(city) {
 
     if (!coordinates) {
         console.log('Unable to get coordinates for the city.');
-        return;
+        return [];
     }
 
     const { lat, lon } = coordinates;
@@ -44,18 +43,10 @@ async function getRecommendationSpots(city) {
         });
 
         const places = response.data.results;
-        if (places.length > 0) {
-            console.log(`Recommended spots in ${city}:`);
-            places.forEach((place, index) => {
-                console.log(`${index + 1}. ${place.name} - ${place.location.formatted_address}`);
-            });
-            return places;
-        }
-        else {
-            console.log(`No spots found in ${city}.`);
-        }
+        return places.length > 0 ? places : [];
     } catch (error) {
         console.error('Error fetching recommended spots:', error);
+        return [];
     }
 }
 
@@ -70,38 +61,23 @@ const getDistancesForSpots = async (spots) => {
         const destinationLatLng = destinations.map(spot => `${spot.lat},${spot.lng}`).join('|');
         const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origin.lat},${origin.lng}&destinations=${destinationLatLng}&key=${apiKey}`;
 
-
         try {
             const response = await axios.get(url);
-
             response.data.rows[0].elements.forEach((element, j) => {
-                const destination = destinations[j]
+                const destination = destinations[j];
                 const distance = element ? element.distance.text : "N/A";
                 const duration = element ? element.duration.text : "N/A";
-
-                results.push({
-                    origin: origin.name,
-                    destination: destination.name,
-                    distance,
-                    duration,
-                });
-
+                results.push({ origin: origin.name, destination: destination.name, distance, duration });
             });
         } catch (error) {
             console.error("Error fetching distance:", error);
             destinations.forEach(destination => {
-                results.push({
-                    origin: origin.name,
-                    destination: destination.name,
-                    distance: "N/A",
-                    duration: "N/A",
-                });
-
+                results.push({ origin: origin.name, destination: destination.name, distance: "N/A", duration: "N/A" });
             });
         }
     }
 
-return results;
+    return results;
 }
 
 function filterByRating(spots) {
@@ -120,7 +96,6 @@ function groupsSpotsByProximity(spots, distanceMatrix, maxDuration = 40) {
             spots.forEach((neighbor) => {
                 if (spot.fsq_id !== neighbor.fsq_id && !visitedSpots.has(neighbor.fsq_id)) {
                     const duration = distanceMatrix[spot.fsq_id][neighbor.fsq_id];
-
                     if (duration < maxDuration) {
                         group.push(neighbor);
                         visitedSpots.add(neighbor.fsq_id);
@@ -151,22 +126,6 @@ function splitIntoGroupsOfThree(groups) {
     return result;
 }
 
-app.post ('/generateItinerary', async (req, res) => {
-    const {location, travelDate, travelDays } = req.body;
-
-    if (!location || !travelDate || !travelDays) {
-        return res.status(400).json({error: 'Location, travel date, and travel days are required'});
-    }
-
-    try {
-        const itinerary = await generateItinerary(location, travelDays);
-        return res.json ({ itinerary });
-    } catch (error) {
-        console.error('Error generating itinerary:', error);
-        return res.status(500).json({error: 'Failed to generate itinerary'});
-    }
-});
-
 async function generateItinerary(location, days) {
     const spots = await getRecommendationSpots(location);
     if (!spots || spots.length === 0) {
@@ -177,7 +136,6 @@ async function generateItinerary(location, days) {
     const filteredSpots = filterByRating(spots);
     const distanceMatrix = await getDistancesForSpots(filteredSpots);
     const groupedSpots = groupsSpotsByProximity(filteredSpots, distanceMatrix);
-
     const splitGroups = splitIntoGroupsOfThree(groupedSpots);
 
     const itinerary = [];
@@ -185,19 +143,14 @@ async function generateItinerary(location, days) {
 
     splitGroups.forEach((group, index) => {
         if (dayCounter < days) {
-            if (!itinerary[dayCounter]) {
-                itinerary[dayCounter] = [];
-            }
+            if (!itinerary[dayCounter]) itinerary[dayCounter] = [];
             itinerary[dayCounter].push(group);
             dayCounter++;
         }
     });
 
     while (dayCounter < days && splitGroups.length > 0) {
-        if (!itinerary[dayCounter]) {
-            itinerary[dayCounter] = [];
-        }
-
+        if (!itinerary[dayCounter]) itinerary[dayCounter] = [];
         itinerary[dayCounter].push(splitGroups.shift());
         dayCounter++;
     }
@@ -205,7 +158,22 @@ async function generateItinerary(location, days) {
     return itinerary;
 }
 
+app.post('/generateItinerary', async (req, res) => {
+    const { location, travelDate, travelDays } = req.body;
+
+    if (!location || !travelDate || !travelDays) {
+        return res.status(400).json({ error: 'Location, travel date, and travel days are required' });
+    }
+
+    try {
+        const itinerary = await generateItinerary(location, travelDays);
+        return res.json({ itinerary });
+    } catch (error) {
+        console.error('Error generating itinerary:', error);
+        return res.status(500).json({ error: 'Failed to generate itinerary' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-})
-
+});
