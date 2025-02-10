@@ -91,11 +91,24 @@ button:hover {
   background-color: #aaa;
 }
 
-/* End Date Styling (Plain Text) */
+/* End Date Display Box */
 #end-date {
   font-size: 1rem;
   color: white;
   text-align: center;
   padding: 10px;
   margin-top: 10px;
+  border: 2px solid white; /* Ensures the border is always visible */
+  border-radius: 5px; /* Optional: adds rounded corners */
+  min-height: 40px; /* Ensures it has a fixed height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200%; /* Makes it the same width as other inputs */
+  background-color: transparent; /* Keeps the background consistent */
+  
+  position: relative;
+  left: 65%;
+  transform: translateX(-50%);
 }
+
