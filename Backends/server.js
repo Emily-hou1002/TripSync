@@ -28,17 +28,64 @@ app.post("/generateItinerary", async (req, res) => {
         return res.status(400).json({ error: "Missing required fields." });
     }
 
-    // Here, you could integrate logic to fetch places, optimize route, etc.
-    const itinerary = {
-        location,
-        startDate: travelDate,
-        duration: travelDays,
-        message: "Your itinerary has been successfully created!"
+    // City-specific attractions and activities
+    const cityAttractions = {
+        'Paris': {
+            landmarks: [
+                "Eiffel Tower",
+                "Louvre Museum",
+                "Notre-Dame Cathedral",
+                "Arc de Triomphe",
+                "Palace of Versailles",
+                "Sacré-Cœur",
+                "Musée d'Orsay",
+                "Champs-Élysées"
+            ],
+            restaurants: [
+                "Le Marais district for authentic French cuisine",
+                "Montmartre's charming cafés",
+                "Latin Quarter bistros",
+                "Saint-Germain-des-Prés brasseries",
+                "Le Bouillon Chartier historic restaurant",
+                "Rue Cler food street"
+            ],
+            activities: [
+                "Seine River cruise",
+                "Luxembourg Gardens stroll",
+                "Tuileries Garden picnic",
+                "Shopping at Galeries Lafayette",
+                "Wine tasting in a local cave",
+                "Sunset at Trocadéro"
+            ]
+        }
+        // Add more cities as needed
     };
 
-    console.log("Itinerary created:", itinerary);
-    res.json({ success: true, itinerary });
+    const defaultAttractions = {
+        landmarks: [`Visit ${location}'s main attractions`],
+        restaurants: [`Try local cuisine in ${location}`],
+        activities: [`Evening entertainment in ${location}`]
+    };
+
+    const cityData = cityAttractions[location] || defaultAttractions;
+
+    // Generate varied daily schedules
+    const dailySchedule = [];
+    for (let i = 0; i < travelDays; i++) {
+        const morning = cityData.landmarks[i % cityData.landmarks.length];
+        const afternoon = cityData.restaurants[i % cityData.restaurants.length];
+        const evening = cityData.activities[i % cityData.activities.length];
+
+        dailySchedule.push([
+            `Morning: Visit ${morning}`,
+            `Afternoon: Enjoy ${afternoon}`,
+            `Evening: Experience ${evening}`
+        ]);
+    }
+
+    res.json({ dailySchedule });
 });
+
 
 // Error handling middleware
 app.use(errorHandler);

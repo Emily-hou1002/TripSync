@@ -42,37 +42,37 @@ const TravelForm = () => {
             alert("Please fill out all fields before confirming your trip.");
             return;
         }
-        // Prepare data to send
+        
         const tripData = {
-            location: city, // Send the city name
-            travelDate: startDate.toISOString(), // Convert start date to ISO string for backend
-            travelDays: days, // Send the number of days
+            location: city,
+            travelDate: startDate.toISOString(),
+            travelDays: parseInt(days),
         };
 
         try {
-            // Send data to backend via POST request to /generateItinerary endpoint
             const response = await fetch('http://localhost:5000/generateItinerary', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json', // Tell the backend we're sending JSON
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(tripData), // Convert the JavaScript object to a JSON string
+                body: JSON.stringify(tripData),
             });
 
-            // Check if the response is okay
             if (response.ok) {
                 const responseData = await response.json();
-                console.log('Itinerary generated:', responseData);
-
-                const tripData = {
-                    location: city,
-                    travelDate: startDate.toISOString(),
-                    travelDays: days,
-                    endDate: endDate ? endDate.toLocaleDateString() : "N/A",
+                
+                // Create the navigation state object
+                const navigationState = {
+                    tripData: {
+                        location: city,
+                        travelDate: startDate,
+                        travelDays: days,
+                        endDate: endDate ? endDate.toLocaleDateString() : "N/A"
+                    },
+                    itinerary: responseData.dailySchedule
                 };
 
-                navigate("/itinerary", {state:tripData});
-                
+                navigate("/itinerary", { state: navigationState });
             } else {
                 const errorData = await response.json();
                 alert(`Error: ${errorData.error}`);

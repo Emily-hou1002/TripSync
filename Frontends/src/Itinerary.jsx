@@ -1,26 +1,44 @@
 import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./Itinerary.css";
 
 const Itinerary = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const tripData = location.state;
-
-  if (!tripData) {
-    return <p style={{ color: "white" }}>No trip details found. Please go back and enter trip details.</p>;
-  }
+  console.log("Itinerary state:", location.state);
+  const navigate = useNavigate();
+  
+  const tripData = location.state?.tripData || {};
+  const itinerary = location.state?.itinerary || [];
 
   return (
     <div className="itinerary-container">
-      <h1>Your Itinerary 📍</h1>
-      <div className="trip-details">
-        <p><strong>Destination:</strong> {tripData.location}</p>
-        <p><strong>Start Date:</strong> {new Date(tripData.travelDate).toLocaleDateString()}</p>
-        <p><strong>End Date:</strong> {tripData.endDate}</p>
-        <p><strong>Total Days:</strong> {tripData.travelDays} days</p>
+      <h1>Your Trip to {tripData.location} 📅</h1>
+
+      <div className="itinerary-info">
+        <p><strong>Travel Date:</strong> {tripData.travelDate ? new Date(tripData.travelDate).toLocaleDateString() : "N/A"}</p>
+        <p><strong>Duration:</strong> {tripData.travelDays} days</p>
+        <p><strong>End Date:</strong> {tripData.endDate || "N/A"}</p>
       </div>
-      <button onClick={() => navigate("/")}>🏠 Back to Home</button>
+
+      {itinerary.length > 0 ? (
+        <div className="itinerary-details">
+          <h2>Itinerary:</h2>
+          {itinerary.map((day, index) => (
+            <div key={index} className="day">
+              <h3>Day {index + 1}</h3>
+              <ul>
+                {day.map((activity, i) => (
+                  <li key={i}>{activity}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p>No itinerary data available.</p>
+      )}
+
+      <button onClick={() => navigate("/")}>Back to Home 🏠</button>
     </div>
   );
 };

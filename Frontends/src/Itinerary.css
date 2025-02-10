@@ -1,5 +1,5 @@
-/* Itinerary Container */
-.itinerary-container {
+/* Trip Planner Container */
+.trip-container {
     text-align: center;
     padding: 50px;
     background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
@@ -12,41 +12,61 @@
     flex-direction: column;
     align-items: center;
     width: 100%; /* Ensure the container takes full width */
-}
-
-/* Heading Styling */
-h1 {
+  }
+  
+  /* Heading Styling */
+  h1 {
     font-size: 2rem;
     margin-bottom: 20px;
     color: white;
-}
-
-/* Trip Details Styling */
-.itinerary-info {
-    font-size: 1.2rem;
-    text-align: left;
-    background-color: rgba(255, 255, 255, 0.2);
-    /* Semi-transparent white background */
-    padding: 20px;
-    border-radius: 10px;
-    margin-top: 20px;
-    line-height: 1.6;
-}
-
-/* Highlighted Date Styling */
-.trip-details strong {
-    color: #ff9800; /* Highlight important trip details */
-    margin: 15px 0;
-    padding: 10px;
-    background-color: rgba(255, 152, 0, 0.3); /* Light background for info */
-    border-radius: 8px;
-    width: 100%;
-    max-width: 400px;
+  }
+  
+  /* Form Styling */
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    width: 100%; /* Make sure form takes full width */
+  }
+  
+  /* Label Styling */
+  label {
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: center; 
+    display: block;
+  }
+  
+  /* Adjust width with max-width */
+  input, .react-datepicker-wrapper {
+    padding: 12px;
+    font-size: 1rem;
+    border-radius: 5px;
     text-align: center;
-}
-
-/* Button Styling */
-button {
+    margin-top: 2px;
+    width: 100%; /* Keep width at 100% */
+    max-width: 100%; /* Ensure it doesn't exceed the parent container width */
+  }
+  
+  
+  /* Ensuring the input container inside the datepicker is aligned properly */
+  .react-datepicker__input-container {
+    display: flex;
+    width: 100%; /* Ensures the container takes the full width */
+  }
+  
+  .react-datepicker__input-container input {
+    width: 100%; /* Ensures the input inside the datepicker takes the full width */
+    padding: 10px; /* Matching padding with regular inputs */
+    font-size: 1rem;
+    border-radius: 5px;
+    box-sizing: border-box; /* Include padding and border in the width calculation */
+    text-align: center;
+  }
+  
+  /* Button Styling */
+  button {
     background-color: #ff9800;
     color: white;
     border: none;
@@ -57,18 +77,40 @@ button {
     transition: 0.3s;
     margin-top: 15px;
     width: 100%;
-}
-
-button:hover {
+  }
+  
+  button:hover {
     background-color: #e68900;
-}
-
-/* Back Button Styling */
-.back-btn {
+  }
+  
+  /* Back Button Styling */
+  .back-btn {
     background-color: #ccc;
     color: black;
-}
-
-.back-btn:hover {
+  }
+  
+  .back-btn:hover {
     background-color: #aaa;
-}
+  }
+  
+  /* End Date Display Box */
+  #end-date {
+    font-size: 1rem;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    margin-top: 10px;
+    border: 2px solid white; /* Ensures the border is always visible */
+    border-radius: 5px; /* Optional: adds rounded corners */
+    min-height: 40px; /* Ensures it has a fixed height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 200%; /* Makes it the same width as other inputs */
+    background-color: transparent; /* Keeps the background consistent */
+    
+    position: relative;
+    left: 65%;
+    transform: translateX(-50%);
+  }
+  
