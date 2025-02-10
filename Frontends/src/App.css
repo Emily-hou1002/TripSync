@@ -41,7 +41,7 @@ body {
 .container {
   position: relative;
   width: 100%;
-  max-width: 1200px; /* Limiting max-width for better content readability */
+  /*max-width: 1200px; /* Limiting max-width for better content readability */
   padding: 20px;
   text-align: center;
   z-index: 1;
