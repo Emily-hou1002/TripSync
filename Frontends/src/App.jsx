@@ -1,5 +1,6 @@
-import { useNavigate, Routes, Route } from "react-router-dom"; // Removed BrowserRouter import here
+import { Routes, Route, useNavigate } from "react-router-dom";
 import TravelForm from "./TravelForm";
+import Itinerary from "./Itinerary"; 
 import "./App.css";
 
 function Home() {
@@ -35,10 +36,11 @@ function Home() {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/plan" element={<TravelForm />} />
-    </Routes>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/plan" element={<TravelForm />} />
+        <Route path="/itinerary" element={<Itinerary />} /> {/* ✅ Add Itinerary Route */}
+      </Routes>
   );
 }
 

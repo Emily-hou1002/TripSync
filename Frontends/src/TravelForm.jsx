@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css"; // Import the CSS for the datepicker
-import "./TravelForm.css"; // Ensure this file exists for styling
+import "react-datepicker/dist/react-datepicker.css"; 
+import "./TravelForm.css"; 
 
 const TravelForm = () => {
   const [city, setCity] = useState("");
@@ -11,7 +11,6 @@ const TravelForm = () => {
   const [endDate, setEndDate] = useState(null);
   const navigate = useNavigate();
 
-  // Function to calculate the end date
   const calculateEndDate = (start, days) => {
     if (start && days > 0) {
       const endDateObj = new Date(start);
@@ -21,13 +20,11 @@ const TravelForm = () => {
     return null;
   };
 
-  // Handle changes to the start date
   const handleStartDateChange = (date) => {
     setStartDate(date);
     setEndDate(calculateEndDate(date, days));
   };
 
-  // Handle changes to the number of days
   const handleNumDaysChange = (e) => {
     const newNumDays = parseInt(e.target.value) || 0;
     if (newNumDays <= 0) return;
@@ -35,37 +32,34 @@ const TravelForm = () => {
     setEndDate(calculateEndDate(startDate, newNumDays));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!city || !startDate || !days) {
       alert("Please fill out all fields before confirming your trip.");
       return;
     }
-  
-    // Prepare data to send
+
     const tripData = {
-      location: city, // Send the city name
-      travelDate: startDate.toISOString(), // Convert start date to ISO string for backend
-      travelDays: days, // Send the number of days
+      location: city,
+      travelDate: startDate.toISOString(),
+      travelDays: days,
+      endDate: endDate.toISOString(),
     };
-  
+
     try {
-      // Send data to backend via POST request to /generateItinerary endpoint
       const response = await fetch('http://localhost:3000/generateItinerary', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json', // Tell the backend we're sending JSON
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(tripData), // Convert the JavaScript object to a JSON string
+        body: JSON.stringify(tripData),
       });
-  
-      // Check if the response is okay
+
       if (response.ok) {
         const responseData = await response.json();
         console.log('Itinerary generated:', responseData.itinerary);
         alert(`Your trip to ${city} has been planned!`);
-        navigate("/"); // Navigate back to home page
+        navigate("/itinerary", { state: tripData });
       } else {
         const errorData = await response.json();
         alert(`Error: ${errorData.error}`);
@@ -75,7 +69,6 @@ const TravelForm = () => {
       alert("An error occurred while sending the data.");
     }
   };
-  
 
   return (
     <div className="trip-container">
