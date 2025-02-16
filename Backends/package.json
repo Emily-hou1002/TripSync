@@ -1,27 +1,16 @@
 {
-  "name": "tripsync",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Emily-hou1002/TripSync.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Emily-hou1002/TripSync/issues"
-  },
-  "homepage": "https://github.com/Emily-hou1002/TripSync#readme",
-  "description": "",
-  "dependencies": {
-    "axois": "^0.0.1-security",
-    "express": "^4.21.2"
-  },
-  "devDependencies": {
-    "@types/node": "^22.13.1"
-  }
+    "name": "trip-sync-backend",
+    "version": "1.0.0",
+    "description": "Backend for the TripSync itinerary planner",
+    "main": "server.js",
+    "type": "commonjs",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "axios": "^1.7.9",
+        "cors": "^2.8.5",
+        "dotenv": "^16.0.0",
+        "express": "^4.18.2"
+    }
 }
