@@ -1,179 +1,207 @@
-import express from 'express';
-import axios from 'axios';
-import bodyParser from 'body-parser';
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config(); // Loads environment variables
+
+// Import route files
+const itineraryRoutes = require("./routes/itineraryRoutes");
+const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
-const PORT = 3000;
 
-app.use(bodyParser.json());
+// Middleware
+app.use(cors()); // Enables cross-origin requests
+app.use(express.json()); // Parses incoming JSON requests
 
-async function getCoordinates(city) {
-    const geocondingUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`;
+// Routes
+app.use("/api/itineraries", itineraryRoutes);
 
-    try {
-        const response = await axios.get(geocondingUrl);
-        if (response.data.length > 0) {
-            const { lat, lon } = response.data[0];
-            return { lat, lon };
-        } else {
-            throw new Error('City not found');
-        }
-    } catch (error) {
-        console.error('Error fetching coordinates:', error);
-        return null;
-    }
-}
+// Default route
+app.get("/", (req, res) => {
+    res.send("Welcome to the Itinerary Planner API!");
+});
 
-async function getRecommendationSpots(city) {
-    const coordinates = await getCoordinates(city);
-
-    if (!coordinates) {
-        console.log('Unable to get coordinates for the city.');
-        return [];
-    }
-
-    const { lat, lon } = coordinates;
-    const url = `https://api.foursquare.com/v3/places/search?ll=${lat},${lon}&radius=5000&limit=10`;
-
-    try {
-        const response = await axios.get(url, {
-            headers: {
-                Authorization: 'fsq3d34DcmaxqZfGM+laKQWWuidaar6Gubqr5snaBTLdWM4=',
-            },
-        });
-
-        const places = response.data.results;
-        return places.length > 0 ? places : [];
-    } catch (error) {
-        console.error('Error fetching recommended spots:', error);
-        return [];
-    }
-}
-
-const getDistancesForSpots = async (spots) => {
-    const apiKey = "AIzaSyCWGKu7hvtqqlcTf3Prxm25uj_mPTashDw";
-    const results = [];
-
-    for (let i = 0; i < spots.length; i++) {
-        const origin = spots[i];
-        const destinations = spots.filter((_, index) => index !== i);
-
-        const destinationLatLng = destinations.map(spot => `${spot.lat},${spot.lng}`).join('|');
-        const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origin.lat},${origin.lng}&destinations=${destinationLatLng}&key=${apiKey}`;
-
-        try {
-            const response = await axios.get(url);
-            response.data.rows[0].elements.forEach((element, j) => {
-                const destination = destinations[j];
-                const distance = element ? element.distance.text : "N/A";
-                const duration = element ? element.duration.text : "N/A";
-                results.push({ origin: origin.name, destination: destination.name, distance, duration });
-            });
-        } catch (error) {
-            console.error("Error fetching distance:", error);
-            destinations.forEach(destination => {
-                results.push({ origin: origin.name, destination: destination.name, distance: "N/A", duration: "N/A" });
-            });
-        }
-    }
-
-    return results;
-}
-
-function filterByRating(spots) {
-    return spots.filter(spot => spot.rating >= 7);
-}
-
-function groupsSpotsByProximity(spots, distanceMatrix, maxDuration = 40) {
-    const groupedSpots = [];
-    const visitedSpots = new Set();
-
-    spots.forEach((spot) => {
-        if (!visitedSpots.has(spot.fsq_id)) {
-            const group = [spot];
-            visitedSpots.add(spot.fsq_id);
-
-            spots.forEach((neighbor) => {
-                if (spot.fsq_id !== neighbor.fsq_id && !visitedSpots.has(neighbor.fsq_id)) {
-                    const duration = distanceMatrix[spot.fsq_id][neighbor.fsq_id];
-                    if (duration < maxDuration) {
-                        group.push(neighbor);
-                        visitedSpots.add(neighbor.fsq_id);
-                    }
-                }
-            });
-
-            groupedSpots.push(group);
-        }
-    });
-
-    return groupedSpots;
-}
-
-function splitIntoGroupsOfThree(groups) {
-    const result = [];
-    groups.forEach(group => {
-        while (group.length > 3) {
-            result.push(group.slice(0, 3));
-            group = group.slice(3);
-        }
-
-        if (group.length > 0) {
-            result.push(group);
-        }
-    });
-
-    return result;
-}
-
-async function generateItinerary(location, days) {
-    const spots = await getRecommendationSpots(location);
-    if (!spots || spots.length === 0) {
-        console.log('No spots found for the location.');
-        return [];
-    }
-
-    const filteredSpots = filterByRating(spots);
-    const distanceMatrix = await getDistancesForSpots(filteredSpots);
-    const groupedSpots = groupsSpotsByProximity(filteredSpots, distanceMatrix);
-    const splitGroups = splitIntoGroupsOfThree(groupedSpots);
-
-    const itinerary = [];
-    let dayCounter = 0;
-
-    splitGroups.forEach((group, index) => {
-        if (dayCounter < days) {
-            if (!itinerary[dayCounter]) itinerary[dayCounter] = [];
-            itinerary[dayCounter].push(group);
-            dayCounter++;
-        }
-    });
-
-    while (dayCounter < days && splitGroups.length > 0) {
-        if (!itinerary[dayCounter]) itinerary[dayCounter] = [];
-        itinerary[dayCounter].push(splitGroups.shift());
-        dayCounter++;
-    }
-
-    return itinerary;
-}
-
-app.post('/generateItinerary', async (req, res) => {
+// ✅ New Route for Generating an Itinerary (Fix for Frontend)
+app.post("/generateItinerary", async (req, res) => {
     const { location, travelDate, travelDays } = req.body;
 
     if (!location || !travelDate || !travelDays) {
-        return res.status(400).json({ error: 'Location, travel date, and travel days are required' });
+        return res.status(400).json({ error: "Missing required fields." });
     }
 
-    try {
-        const itinerary = await generateItinerary(location, travelDays);
-        return res.json({ itinerary });
-    } catch (error) {
-        console.error('Error generating itinerary:', error);
-        return res.status(500).json({ error: 'Failed to generate itinerary' });
+    // City-specific attractions and activities
+    // City-specific attractions and activities
+    const cityAttractions = {
+        'Paris': {
+            landmarks: [
+                "Eiffel Tower",
+                "Louvre Museum",
+                "Notre-Dame Cathedral",
+                "Arc de Triomphe",
+                "Palace of Versailles",
+                "Sacré-Cœur",
+                "Musée d'Orsay",
+                "Champs-Élysées"
+            ],
+            restaurants: [
+                "Le Marais district for authentic French cuisine",
+                "Montmartre's charming cafés",
+                "Latin Quarter bistros",
+                "Saint-Germain-des-Prés brasseries",
+                "Le Bouillon Chartier historic restaurant",
+                "Rue Cler food street"
+            ],
+            activities: [
+                "Seine River cruise",
+                "Luxembourg Gardens stroll",
+                "Tuileries Garden picnic",
+                "Shopping at Galeries Lafayette",
+                "Wine tasting in a local cave",
+                "Sunset at Trocadéro"
+            ]
+        },
+        'New York': {
+            landmarks: [
+                "Statue of Liberty",
+                "Times Square",
+                "Central Park",
+                "Empire State Building",
+                "Brooklyn Bridge",
+                "One World Observatory",
+                "Rockefeller Center",
+                "Grand Central Terminal"
+            ],
+            restaurants: [
+                "Katz's Delicatessen for pastrami sandwiches",
+                "Joe's Pizza for classic New York slices",
+                "Le Bernardin for Michelin-starred seafood",
+                "Shake Shack in Madison Square Park",
+                "Eataly NYC for Italian cuisine",
+                "Smorgasburg food market in Brooklyn"
+            ],
+            activities: [
+                "Broadway show in Times Square",
+                "Walk along The High Line",
+                "Visit the MET Museum",
+                "Boat ride to Ellis Island",
+                "Explore Chelsea Market",
+                "Night skyline view from Top of the Rock"
+            ]
+        },
+        'Tokyo': {
+            landmarks: [
+                "Shibuya Crossing",
+                "Tokyo Tower",
+                "Senso-ji Temple",
+                "Meiji Shrine",
+                "Tsukiji Outer Market",
+                "Akihabara Electric Town",
+                "Ginza shopping district",
+                "Odaiba futuristic island"
+            ],
+            restaurants: [
+                "Sukiyabashi Jiro for sushi",
+                "Ippudo Ramen in Shinjuku",
+                "Yakitori Alley in Yurakucho",
+                "Tonkatsu Maisen for pork cutlet",
+                "Tsukiji Outer Market for fresh seafood",
+                "Ningyocho Imahan for sukiyaki"
+            ],
+            activities: [
+                "Cherry blossom viewing in Ueno Park",
+                "Shopping in Harajuku's Takeshita Street",
+                "Sumo wrestling match in Ryogoku",
+                "Robot Show in Shinjuku",
+                "Day trip to Mount Fuji",
+                "Anime pilgrimage in Akihabara"
+            ]
+        },
+        'London': {
+            landmarks: [
+                "Big Ben & Houses of Parliament",
+                "Tower of London",
+                "Buckingham Palace",
+                "London Eye",
+                "St. Paul's Cathedral",
+                "Trafalgar Square",
+                "Westminster Abbey",
+                "British Museum"
+            ],
+            restaurants: [
+                "Sketch London for afternoon tea",
+                "Dishoom for Indian cuisine",
+                "The Ledbury for fine dining",
+                "Borough Market for street food",
+                "Duck & Waffle for skyline views",
+                "Chinatown for authentic Asian food"
+            ],
+            activities: [
+                "Thames River cruise",
+                "West End theater show",
+                "Walk through Hyde Park",
+                "Shopping at Harrods & Oxford Street",
+                "Ride the Tube and explore Camden Market",
+                "Day trip to Windsor Castle"
+            ]
+        },
+        'Vancouver': {
+            landmarks: [
+                "Stanley Park",
+                "Capilano Suspension Bridge",
+                "Grouse Mountain",
+                "Granville Island",
+                "Gastown Steam Clock",
+                "Vancouver Art Gallery",
+                "Science World",
+                "Lions Gate Bridge"
+            ],
+            restaurants: [
+                "Miku for sushi with waterfront views",
+                "The Flying Pig for Canadian comfort food",
+                "Japadog food truck for Japanese hotdogs",
+                "Salmon n' Bannock for Indigenous cuisine",
+                "Dinesty Dumpling House for dim sum",
+                "Nightingale for farm-to-table dishes"
+            ],
+            activities: [
+                "Cycling around Stanley Park",
+                "Skiing or hiking on Grouse Mountain",
+                "Sunset at English Bay Beach",
+                "Kayaking in Deep Cove",
+                "Whale watching in the Pacific Ocean",
+                "Exploring Capilano Suspension Bridge Park"
+            ]
+        }
+    };
+
+    const defaultAttractions = {
+        landmarks: [`Visit ${location}'s main attractions`],
+        restaurants: [`Try local cuisine in ${location}`],
+        activities: [`Evening entertainment in ${location}`]
+    };
+
+    const cityData = cityAttractions[location] || defaultAttractions;
+
+    // Generate varied daily schedules
+    const dailySchedule = [];
+    for (let i = 0; i < travelDays; i++) {
+        const morning = cityData.landmarks[i % cityData.landmarks.length];
+        const afternoon = cityData.restaurants[i % cityData.restaurants.length];
+        const evening = cityData.activities[i % cityData.activities.length];
+
+        dailySchedule.push([
+            `Morning: Visit ${morning}`,
+            `Afternoon: Enjoy ${afternoon}`,
+            `Evening: Experience ${evening}`
+        ]);
     }
+
+    res.json({ dailySchedule });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+
+// Error handling middleware
+app.use(errorHandler);
+
+// Start server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
